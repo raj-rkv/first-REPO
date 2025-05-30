@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caesar Cipher UI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, #6a0dad, #00ff7f);
+      opacity: 0.9;
+      z-index: -2;
+    }
+    #particles {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="bg-[#0d0d0d] min-h-screen text-white flex flex-col items-center justify-start p-4 overflow-y-auto">
+  <div id="particles"></div>
+
+  <div class="container mx-auto px-4">
+    <div class="bg-[#1a1a2e] bg-opacity-90 backdrop-blur-md p-8 rounded-2xl shadow-2xl w-full max-w-3xl border border-[#00fff7] mx-auto">
+      <div class="mb-6 text-center max-w-xl mx-auto">
+        <svg viewBox="0 0 600 100" class="mx-auto h-24 w-full" xmlns="http://www.w3.org/2000/svg">
+          <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+                font-family="'Comic Sans MS', cursive, sans-serif"
+                font-size="40" fill="none" stroke="#00fff7" stroke-width="2">
+            🔐 Caesar Cipher
+          </text>
+        </svg>
+      </div>
+
+      <label class="block mb-2 font-semibold text-[#00fff7]">Enter Text:</label>
+      <textarea id="inputText" class="w-full p-3 rounded-md bg-[#16213e] text-white mb-4 resize-none focus:outline-none focus:ring-2 focus:ring-[#00fff7]" rows="4" placeholder="Type here..."></textarea>
+
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div class="flex items-center gap-3">
+          <label for="key" class="font-semibold text-[#00fff7]">Key:</label>
+          <input type="range" id="key" min="1" max="25" value="1" class="accent-[#00fff7]">
+          <span id="keyDisplay" class="text-[#00fff7]">1</span>
+        </div>
+
+        <div class="flex flex-wrap gap-4">
+          <button onclick="handleCipher('encrypt')" class="px-4 py-2 rounded bg-green-400 text-black font-bold hover:bg-green-300">Encrypt</button>
+          <button onclick="handleCipher('decrypt')" class="px-4 py-2 rounded bg-blue-400 text-black font-bold hover:bg-blue-300">Decrypt</button>
+        </div>
+      </div>
+
+      <label class="block mb-2 font-semibold text-[#00fff7]">Result:</label>
+      <textarea id="outputText" class="w-full p-3 rounded-md bg-[#16213e] text-white mb-4 resize-none focus:outline-none focus:ring-2 focus:ring-[#00fff7]" rows="4" readonly></textarea>
+
+      <div class="flex flex-wrap justify-end gap-4">
+        <button onclick="copyResult()" class="bg-yellow-300 text-black px-3 py-1 rounded hover:bg-yellow-200">📋 Copy</button>
+        <button onclick="clearHistory()" class="bg-red-400 text-black px-3 py-1 rounded hover:bg-red-300">🗑️ Clear History</button>
+        <button onclick="clearResult()" class="bg-teal-400 text-black px-3 py-1 rounded hover:bg-teal-300">🧹 Clear Result</button>
+      </div>
+
+      <div class="mt-6">
+        <h2 class="text-xl font-bold text-[#00fff7]">📝 History</h2>
+        <ul id="historyLog" class="mt-2 text-sm max-h-40 overflow-y-auto space-y-1 break-words w-full"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
+  <script>
+    tsParticles.load("particles", {
+      fullScreen: { enable: false },
+      background: { color: { value: "transparent" } },
+      particles: {
+        number: { value: 60 },
+        color: { value: ["#00ffff", "#ff00ff", "#00fff7"] },
+        shape: { type: "circle" },
+        opacity: { value: 0.7 },
+        size: { value: 3 },
+        move: {
+          enable: true,
+          speed: 1.5,
+          direction: "none",
+          random: true,
+          straight: false,
+          outModes: { default: "out" }
+        }
+      },
+      interactivity: {
+        events: {
+          onHover: { enable: true, mode: "repulse" },
+          resize: true
+        },
+        modes: {
+          repulse: { distance: 50, duration: 0.4 }
+        }
+      }
+    });
+  </script>
+
+  <script>
+    const keyInput = document.getElementById('key');
+    const keyDisplay = document.getElementById('keyDisplay');
+    keyInput.addEventListener('input', () => keyDisplay.textContent = keyInput.value);
+
+    function caesarCipher(text, key, mode) {
+      return text.split('').map(char => {
+        if (char.match(/[a-z]/i)) {
+          const base = char === char.toLowerCase() ? 97 : 65;
+          const shift = mode === 'encrypt' ? key : -key;
+          return String.fromCharCode((char.charCodeAt(0) - base + shift + 26) % 26 + base);
+        }
+        return char;
+      }).join('');
+    }
+
+    function handleCipher(mode) {
+      const input = document.getElementById('inputText').value;
+      const key = parseInt(document.getElementById('key').value);
+      const result = caesarCipher(input, key, mode);
+      document.getElementById('outputText').value = result;
+      logHistory(mode, input, result);
+    }
+
+    function copyResult() {
+      const output = document.getElementById('outputText');
+      navigator.clipboard.writeText(output.value).then(() => alert('Result copied!'));
+    }
+
+    function logHistory(action, input, result) {
+      const log = document.getElementById('historyLog');
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="font-bold">${action.toUpperCase()}</span>: <span class="text-yellow-200">${input}</span> ➜ <span class="text-green-200">${result}</span>`;
+      log.appendChild(li);
+    }
+
+    function clearHistory() {
+      document.getElementById('historyLog').innerHTML = '';
+    }
+
+    function clearResult() {
+      document.getElementById('outputText').value = '';
+    }
+  </script>
+</body>
+</html>
